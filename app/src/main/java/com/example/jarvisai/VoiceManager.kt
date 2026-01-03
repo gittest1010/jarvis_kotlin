@@ -14,6 +14,7 @@ import com.k2fsa.sherpa.onnx.OfflineRecognizer
 import com.k2fsa.sherpa.onnx.OfflineRecognizerConfig
 import com.k2fsa.sherpa.onnx.OfflineTts
 import com.k2fsa.sherpa.onnx.OfflineTtsConfig
+import com.k2fsa.sherpa.onnx.OfflineTtsModelConfig
 import com.k2fsa.sherpa.onnx.OfflineTtsVitsModelConfig
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -55,6 +56,7 @@ class VoiceManager(private val context: Context) {
     // TTS Assets (VITS Pratham)
     private val ttsModel = "model-pratham.onnx"
     private val ttsTokens = "tokens-pratham.txt"
+    private val espeakFolder = "espeak-ng-data" // Folder name in assets
 
     init {
         scope.launch {
@@ -64,7 +66,9 @@ class VoiceManager(private val context: Context) {
 
     private suspend fun initModels() {
         try {
-            // 1. Copy Assets to Internal Storage
+            val dataDir = context.filesDir.absolutePath
+
+            // 1. Copy Single Files
             // Native C++ libraries cannot read directly from APK Assets, they need physical paths.
             val assetMap = mapOf(
                 sttEncoder to sttEncoder,
@@ -78,9 +82,10 @@ class VoiceManager(private val context: Context) {
                 copyAssetToFile(context, assetName, fileName)
             }
 
-            val dataDir = context.filesDir.absolutePath
+            // 2. Copy Espeak Folder (Recursive)
+            copyAssetFolder(context.assets, espeakFolder, "$dataDir/$espeakFolder")
 
-            // 2. Initialize STT (Whisper)
+            // 3. Initialize STT (Whisper)
             val recConfig = OfflineRecognizerConfig(
                 featConfig = com.k2fsa.sherpa.onnx.FeatureConfig(sampleRate = 16000, featureDim = 80),
                 modelConfig = OfflineModelConfig(
@@ -104,12 +109,13 @@ class VoiceManager(private val context: Context) {
             recognizer = OfflineRecognizer(recConfig)
             Log.d("VoiceManager", "STT Initialized")
 
-            // 3. Initialize TTS (VITS)
+            // 4. Initialize TTS (VITS with Espeak)
             val ttsConfig = OfflineTtsConfig(
                 model = OfflineTtsModelConfig(
                     vits = OfflineTtsVitsModelConfig(
                         model = "$dataDir/$ttsModel",
                         tokens = "$dataDir/$ttsTokens",
+                        dataDir = "$dataDir/$espeakFolder", // Path to copied espeak folder
                         noiseScale = 0.667f,
                         noiseScaleW = 0.8f,
                         lengthScale = 1.0f
@@ -129,7 +135,7 @@ class VoiceManager(private val context: Context) {
         } catch (e: Exception) {
             Log.e("VoiceManager", "Error loading models", e)
             withContext(Dispatchers.Main) {
-                Toast.makeText(context, "Missing Model: ${e.message}", Toast.LENGTH_LONG).show()
+                Toast.makeText(context, "Error: ${e.message}", Toast.LENGTH_LONG).show()
                 updateStatus("Error: Check Logs", false, false)
             }
         }
@@ -178,9 +184,6 @@ class VoiceManager(private val context: Context) {
                             // Live update
                             if (result.text.isNotEmpty()) {
                                 _uiState.value = _uiState.value.copy(transcript = result.text)
-                                
-                                // Simple keyword detection for "Stop" or end of sentence logic
-                                // For this demo, we just print live.
                             }
                         }
                     }
@@ -219,9 +222,12 @@ class VoiceManager(private val context: Context) {
             updateStatus("Speaking...", isListening = false, isSpeaking = true)
             
             try {
+                // Generate audio
                 val audioData = tts!!.generate(text, 0, 1.0f)
                 if (audioData != null) {
                     playAudio(audioData.samples, audioData.sampleRate)
+                } else {
+                    Log.e("VoiceManager", "TTS returned null audio")
                 }
             } catch (e: Exception) {
                 Log.e("VoiceManager", "TTS Error", e)
@@ -300,6 +306,47 @@ class VoiceManager(private val context: Context) {
         } catch (e: Exception) {
             Log.e("VoiceManager", "Failed to copy asset: $assetName")
             throw e // Rethrow to be caught by initModels
+        }
+    }
+
+    // Recursive folder copy logic for Espeak
+    private fun copyAssetFolder(assetManager: AssetManager, fromAssetPath: String, toPath: String) {
+        try {
+            val files = assetManager.list(fromAssetPath) ?: return
+            File(toPath).mkdirs() // Create directory if not exists
+            
+            if (files.isEmpty()) {
+                // If the list is empty, it might be a file or an empty folder.
+                // Try to copy it as a file.
+                copyAsset(assetManager, fromAssetPath, toPath)
+            } else {
+                // It's a directory, recurse
+                for (file in files) {
+                    copyAssetFolder(assetManager, "$fromAssetPath/$file", "$toPath/$file")
+                }
+            }
+        } catch (e: Exception) {
+            Log.e("VoiceManager", "Error copying folder: $fromAssetPath", e)
+        }
+    }
+
+    private fun copyAsset(assetManager: AssetManager, fromAssetPath: String, toPath: String) {
+        val destFile = File(toPath)
+        if (destFile.exists()) return 
+
+        try {
+            assetManager.open(fromAssetPath).use { `in` ->
+                FileOutputStream(toPath).use { out ->
+                    val buffer = ByteArray(4 * 1024)
+                    var read: Int
+                    while (`in`.read(buffer).also { read = it } != -1) {
+                        out.write(buffer, 0, read)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+             // Handle potential "is directory" errors if list() failed somehow
+             // Log.w("VoiceManager", "Skipping $fromAssetPath (might be a sub-dir or empty)")
         }
     }
 }
