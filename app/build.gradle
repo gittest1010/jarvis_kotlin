@@ -65,5 +65,5 @@ dependencies {
     implementation 'androidx.compose.material3:material3'
     
     // Core Logic (Sherpa Onnx)
-    implementation 'com.k2fsa.sherpa.onnx:sherpa-onnx-android:1.12.20'
+    implementation 'com.k2fsa.sherpa.onnx:sherpa-onnx-android:1.9.23'
 }
