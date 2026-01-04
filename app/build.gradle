@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace 'com.k2fsa.sherpa.onnx'
+    namespace 'com.example.jarvisai'
     compileSdk 34
 
     defaultConfig {
-        applicationId "com.k2fsa.sherpa.onnx"
+        applicationId "com.example.jarvisai"
         minSdk 24
         targetSdk 34
         versionCode 1
@@ -16,7 +16,7 @@ android {
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         
-        // CRITICAL: Native Libraries Support for AI Models
+        // Critical for Sherpa Onnx
         ndk {
             abiFilters "arm64-v8a", "armeabi-v7a", "x86_64"
         }
@@ -28,18 +28,20 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
     }
+
     kotlinOptions {
         jvmTarget = '1.8'
     }
 
-    // Jarvis UI (Jetpack Compose) Configuration
     buildFeatures {
         compose true
     }
+
     composeOptions {
         kotlinCompilerExtensionVersion '1.5.1'
     }
@@ -52,22 +54,16 @@ android {
     }
 }
 
-// NOTE: 'repositories' block removed to fix the conflict error.
-// It is already handled in settings.gradle
-
 dependencies {
-    // Android Core
     implementation 'androidx.core:core-ktx:1.12.0'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
     implementation 'androidx.activity:activity-compose:1.8.2'
-    
-    // Compose UI
     implementation platform('androidx.compose:compose-bom:2023.08.00')
     implementation 'androidx.compose.ui:ui'
     implementation 'androidx.compose.ui:ui-graphics'
     implementation 'androidx.compose.ui:ui-tooling-preview'
     implementation 'androidx.compose.material3:material3'
-
-    // AI Library (Stable Version)
-    implementation 'com.k2fsa.sherpa.onnx:sherpa-onnx-android:1.9.14'
+    
+    // STABLE VERSION FIX: 1.6.1 is verified to exist on Maven Central
+    implementation 'com.k2fsa.sherpa.onnx:sherpa-onnx-android:1.6.1'
 }
