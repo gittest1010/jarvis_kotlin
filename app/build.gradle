@@ -26,7 +26,9 @@ android {
 }
 
 dependencies {
-    implementation("com.k2fsa.sherpa-onnx:sherpa-onnx:1.10.3")
+    // FIXED: Changed 'sherpa-onnx' to 'sherpa.onnx' in the group ID
+    implementation("com.k2fsa.sherpa.onnx:sherpa-onnx:1.10.3")
+    
     implementation("androidx.compose.ui:ui:1.5.4")
     implementation("androidx.compose.material3:material3:1.1.2")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")

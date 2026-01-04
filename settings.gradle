@@ -13,6 +13,8 @@ dependencyResolutionManagement {
         google()
         mavenCentral()
         maven { url 'https://jitpack.io' }
+        // Adding Sonatype for broader compatibility with sherpa versions
+        maven { url "https://oss.sonatype.org/content/repositories/releases" }
     }
 }
 rootProject.name = "Jarvis AI"
