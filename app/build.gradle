@@ -46,7 +46,8 @@ android {
         kotlinCompilerExtensionVersion '1.5.1'
     }
     
-    packaging {
+    // FIXED: Changed 'packaging' to 'packagingOptions' for backward compatibility
+    packagingOptions {
         resources {
             excludes += '/META-INF/{AL2.0,LGPL2.1}'
         }
@@ -54,8 +55,7 @@ android {
 }
 
 dependencies {
-    // UPDATED: Version 1.10.43 is available on Maven Central
-    // This is the fat AAR containing all necessary native libraries
+    // Sherpa-ONNX stable version on Maven Central
     implementation("com.k2fsa.sherpa.onnx:sherpa-onnx:1.10.43")
     
     implementation("androidx.compose.ui:ui:1.5.4")
