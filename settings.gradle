@@ -1,8 +1,8 @@
 pluginManagement {
     repositories {
+        gradlePluginPortal()
         google()
         mavenCentral()
-        gradlePluginPortal()
     }
 }
 dependencyResolutionManagement {
@@ -10,8 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
-        // JitPack backup ke liye (agar library central par na mile)
-        maven { url 'https://jitpack.io' } 
+        maven { url 'https://jitpack.io' } // Backup repo
     }
 }
 rootProject.name = "JarvisAI"
